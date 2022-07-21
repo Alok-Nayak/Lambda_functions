@@ -1,3 +1,5 @@
+#s3-object-delete
+#start
 import boto3
 import time, urllib
 import json
@@ -50,3 +52,5 @@ def lambda_handler(event, context):
     except Exception as err:
         print ("Error -"+str(err))
         return err
+        #end
+        
