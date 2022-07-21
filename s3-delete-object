@@ -1,0 +1,53 @@
+
+import boto3
+import time, urllib
+import json
+import datetime  
+import os
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    bucket = "alok-test-bkt"
+    try:
+        # print ("Using waiter to waiting for o   bject to persist through s3 service")
+        listdata = s3.list_objects_v2(Bucket=bucket)
+        listdata = listdata['Contents'] if "Contents" in listdata else []
+        for key in listdata:
+          #print(key['LastModified'])
+          lastmodified = str(key['LastModified'])
+          print ("lastmodified:", lastmodified)
+          #converting lastmodified time to epoch time
+          time_split=lastmodified.split(' ')
+          a=time_split[0].split('-')
+          b=time_split[1].split(':')
+          y=int(a[0])
+          m=int(a[1])
+          d=int(a[2])
+          h=int(b[0])
+          n=int(b[1])
+          
+          print("l_modified_time", y, m, d, h, n)
+          # using the timestamp() function to convert datetime into epoch time  
+          l_epoch_time = datetime.datetime(y, m, d, h, n).timestamp()  
+          # printing the values  
+          print("Converted epoch time of objects:", l_epoch_time)  
+        
+          t_epoch = time.time()
+          print(f"The epoch time is now: {t_epoch}")
+          actualtime = int(t_epoch) - int(l_epoch_time)
+          print("actualtime:",actualtime)
+          
+          deletetime=int(os.environ['deletetime'])  #key:deletetime, value:30(environment variable. can give direct value)
+          print(type(deletetime))                   #delete time is in sec.
+          
+          if actualtime > deletetime:
+            s3.delete_object(Bucket=bucket, Key=key["Key"])
+            print(f'{key["Key"]}')
+            print('Object Deleted!!!')
+          else:
+            print("Oops, check your code!!!!!!!")
+          
+    except Exception as err:
+        print ("Error -"+str(err))
+        return err
