@@ -13,8 +13,8 @@ def lambda_handler(event, context):
     try:
         # print ("Using waiter to waiting for o   bject to persist through s3 service")
         listdata = s3.list_objects_v2(Bucket=bucket)      #listing obects from bucket
-        listdata = listdata['Contents'] if "Contents" in listdata else []
-        for key in listdata:
+        contents = listdata['Contents'] if "Contents" in listdata else []
+        for key in contents:
           #print(key['LastModified'])
           lastmodified = str(key['LastModified'])         #storing last modified time of object
           print ("lastmodified:", lastmodified)
