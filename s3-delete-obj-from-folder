@@ -1,0 +1,54 @@
+from mailbox import Error
+from socket import error
+import boto3
+import time, urllib
+import json
+import datetime  
+import os
+import pathlib
+import sys
+
+s3 = boto3.client('s3')
+
+
+def lambda_handler(event, context):
+    bucket = os.environ["bucket"]                                               #bucket name
+    prefix = os.environ["prefix"]                                               #prefix = foldername
+    deletetimeinseconds = int(os.environ["deletetimeinseconds"])
+
+    try:
+        listdata = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+        contents = listdata['Contents'] if "Contents" in listdata else []
+        print(contents)
+        for item in contents:
+            file_name = item['Key'] if 'Key' in item else None
+            if not file_name:
+                print(f'It seems to be a folder, skipping it: {file_name}')
+                continue
+            if file_name.endswith((".pdf", ".json", ".txt", ".xml", ".")):        #file type to be deleted 
+                print(f'File is pdf: {file_name}')
+                lastmodified = str(item['LastModified'])
+                print (f'File: {file_name}, lastmodified: {lastmodified}')
+                time_split=lastmodified.split(' ')
+                a=time_split[0].split('-')
+                b=time_split[1].split(':')
+                y=int(a[0])
+                m=int(a[1])
+                d=int(a[2])
+                h=int(b[0])
+                n=int(b[1])
+                print("l_modified_time:", y, m, d, h, n)
+                l_epoch_time = datetime.datetime(y, m, d, h, n).timestamp()
+                t_epoch = time.time()
+                actualtime = int(t_epoch) - int(l_epoch_time)
+                print (f'File: {file_name}, actualtime: {actualtime}')
+                if actualtime > deletetimeinseconds:
+                    print (f'Deleting File: {file_name}, as the time exceeded, actualtime: {actualtime}, deletetimeinseconds: {deletetimeinseconds}')
+                    s3.delete_object(Bucket=bucket, Key=file_name)
+                else:
+                     print (f'Skipping deletion of file: {file_name}, as the time did not exceeded, actualtime: {actualtime}, deletetimeinseconds: {deletetimeinseconds}')
+            else:
+                print(f'File is not a pdf: {file_name}')
+            
+    except Exception as e:
+        print(f'Found exception: {str(e)}')
